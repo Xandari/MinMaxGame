@@ -1,27 +1,22 @@
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.InputMismatchException;
+import java.util.List;
 import java.util.Scanner;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Rules extends Constans {
-    // String[] table = {"1", "2", "3", "4", "5", "6", "7", "8", "9"};
-    String[][] board;
+public class Rules {
     String player1;
     String botOrPlayer2;
-    String winnerOrDraw;
+    int turn = 0;
     String win;
     String gameResoult;
+    boolean validated;
 
-    boolean check;
-
-    Rules() {                            // ------------- Class Constructor --------------
-        this.board = Constans.board;
-        this.player1 = Constans.player1;
-        this.botOrPlayer2 = Constans.player2;
-    }
-
-    String printTable() {
+    String printBoard(String[][] board) {
         String str =
                 "|---|---|---|"
                         + "\n| " + board[0][0] + "   " + board[1][0] + "   " + board[2][0] + " |"
@@ -62,130 +57,120 @@ public class Rules extends Constans {
                 case 7:
                     line = boardToCheck[2][0] + boardToCheck[1][1] + boardToCheck[0][2];
                     break;
+
+
             }
             if (line.equalsIgnoreCase("XXX")) {
-                winnerOrDraw = "X";
+                win = "X";
             } else if (line.equalsIgnoreCase("OOO")) {
-                winnerOrDraw = "O";
+                win = "O";
             }
+
         }
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                // Check if cell is empty
-                if (!board[i][j].equalsIgnoreCase("X") && !board[i][j].equalsIgnoreCase("Y")) {
-                    break;
-                } else if (i == 8) {
-                    winnerOrDraw = "DRAW";
-                }
-            }
+        turn++;
+        if (turn == 9) {
+            win = "Draw";
         }
-        return winnerOrDraw;
+        System.out.println("Turn: " + turn);
+        return win;
     } // return String winnerOrDraw = X / O / DRAW
 
 
     public int random() {
-        int randomPlayer;
-        int random = (int) (Math.random() * 2 + 1);
-        if (random == 1) randomPlayer = 1;
-        else randomPlayer = 2;
-        return randomPlayer;
+        return (int) (Math.random() * 2 + 1);
     }
 
-    public boolean checkForValue(int val, String[][] arr) {
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                if (arr[i][j].equalsIgnoreCase(String.valueOf(val)))
-                    return true;
-            }
-        }
-        return false; //it will reach here if return true was not called.
-    }
-
-    String[][] playerMove(String[][] board) {
-        Scanner scanner = new Scanner(System.in);
-        int scan;
-        boolean goodMove = false;
-        System.out.println(
-                "Player: " + player1 + " Make your move. \nEnter the slot number."
-                        + "\n" );
-        scan = scanner.nextInt();
-        // Stream<String> boardStream = (Stream<String>) Stream.of(board);
-        while (!goodMove) {
-            try {
-                if (!(scan > 0 && scan <= 9)) {
-                    System.out.println(
-                            "Invalid number. Try again: ");
-                    continue;
-                }
-            } catch (InputMismatchException e) {
-                System.out.println(
-                        "Invalid number. Try again: ");
-                continue;
-            }
-            goodMove = true;
-        }
-        goodMove = false;
-        while (!goodMove) {
-            if (checkForValue(scan, board)) { // if 2
-                setPlayer1ValueinBoard(scan);
-                goodMove = true;
-            } else {                                                     // else 2
-                System.out.println(
-                        "Slot already taken!! Choose another number:");
-            }
-        }
-
-        return board;
-    }
-
-    public void setPlayer1ValueinBoard(int scanValue) {
-        int count = 0;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                if (count == scanValue) break;
-                    board[i][j] = player1;
-                    count++;
-            }
-        }
-    }
 
     String start() {
         Scanner scanner = new Scanner(System.in);
-        int playerpriority = random();
-        BotMiniMax bot = new BotMiniMax(board);
-        do {
-            //int playerpriority = random();
-            if (playerpriority == 1) {
-                Constans.player1 = "X";
-                Constans.player2 = "O";
-                System.out.println(printTable());
-                System.out.println("!! PLAYER TURN !!");
-                board = playerMove(board);
-                win = winCheck(board);
-                System.out.println(printTable());
-                board = bot.botMove(board);
+        var board = initBoard();
+int priority =random();
+        while (win == null) {
 
-                System.out.println("!! BOT MOVED !!");
+            if (priority == 1) {
+                player1 = "X";
+                botOrPlayer2 = "O";
+
+                System.out.println(printBoard(board));
+
+                System.out.println("!! PLAYER TURN !!");
+                String move;
+                do {
+                    move = scanner.next();
+                    board = playerMoveValidation(move, board);
+                    if (!validated) {
+                        System.out.println("Wrong input");
+                    }
+                } while (!validated);
+
                 win = winCheck(board);
+
+                if (!"DRAW".equalsIgnoreCase(win)) {
+
+                    board = new BotMiniMax(player1, botOrPlayer2).computerMove(board);
+                    System.out.println("!! BOT MOVED !!");
+                    win = winCheck(board);
+                }
             } else {
-                Constans.player1 = "O";
-                Constans.player2 = "X";
-                System.out.println(printTable());
-                board = new BotMiniMax().botMove(board);
-                System.out.println("!! BOT MOVED !!");
-                win = winCheck(board);
-                System.out.println(printTable());
-                System.out.println("!! PLAYER MOVE !!");
-                board = playerMove(board);
+                player1 = "O";
+                botOrPlayer2 = "X";
+                System.out.println(printBoard(board));
+
+                if (!"DRAW".equalsIgnoreCase(win)) {
+
+                    board = new BotMiniMax(player1, botOrPlayer2).computerMove(board);
+                    System.out.println("!! BOT MOVED !!");
+                    win = winCheck(board);
+                }
+
+                System.out.println(printBoard(board));
+
+                System.out.println("!! PLAYER TURN !!");
+                String move;
+                do {
+                    move = scanner.next();
+                    board = playerMoveValidation(move, board);
+                    if (!validated) {
+                        System.out.println("Wrong input");
+                    }
+                } while (!validated);
+
                 win = winCheck(board);
 
             }
-        } while (win == null);
+
+        }
         if (win.equalsIgnoreCase("DRAW")) {
             gameResoult = "!!AFTER HEROIC WAR NOOBODY WINS!!";
         } else gameResoult = "!! AFTER HEROIC WAR " + win + " WIN THIS DUEL !!";
         return gameResoult;
     }
 
+    public String[][] playerMoveValidation(String move, String[][] boardToChange) {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (move.matches("^[1-9]$") && boardToChange[i][j].equalsIgnoreCase(move)
+                        && !boardToChange[i][j].equalsIgnoreCase("X")
+                        && !boardToChange[i][j].equalsIgnoreCase("O")) {
+                    boardToChange[i][j] = player1;
+                    validated = true;
+                }
+            }
+        }
+        return boardToChange;
+    }
 
+    private String[][] initBoard() {
+        String[] table = {"1", "2", "3", "4", "5", "6", "7", "8", "9"};
+        String[][] a = new String[3][3];
+        int count = 0;
+        for (int j = 0; j < 3; j++) {
+            for (int i = 0; i < 3; i++) {
+                if (count == table.length) break; // if count == 7
+                a[i][j] = table[count];
+                count++;
+            }
+        }
+        return a;
+    }
 }
