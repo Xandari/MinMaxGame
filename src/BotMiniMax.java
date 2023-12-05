@@ -1,6 +1,8 @@
 import java.util.Objects;
 
 public class BotMiniMax {
+
+    Util utils = new Util();
     String player_X;
     String player_O;
     public BotMiniMax(String player_X, String player_O) {
@@ -8,11 +10,11 @@ public class BotMiniMax {
         this.player_O = player_O;
     }
 
-    public String[][] computerMove(String[][] board) {
+    public String[][] putingSymbolByComputer(String[][] board) {
 
         int[] bestMove = minimax(0, player_O, board);
         board[bestMove[0]][bestMove[1]] = player_O;
-        System.out.println("Computer chooses: Row " + (bestMove[0] + 1) + " Col " + (bestMove[1]));
+        System.out.println("Computer chooses: Col " + (bestMove[0] + 1) + " Row " + (bestMove[1] + 1));
         return board;
     }
 
@@ -43,8 +45,8 @@ public class BotMiniMax {
     }
 
     public int minimaxHelper(int depth, String player, String[][] board) {
-        if (checkWin(player_X, board)) return -1;
-        if (checkWin(player_O, board)) return 1;
+        if (utils.checkWin(player_X, board)) return -1;
+        if (utils.checkWin(player_O, board)) return 1;
         if (isBoardFull(board)) return 0;
 
         int bestScore = (player.equals(player_O)) ? Integer.MIN_VALUE : Integer.MAX_VALUE;
@@ -66,16 +68,6 @@ public class BotMiniMax {
         return bestScore;
     }
 
-    public boolean checkWin(String player, String[][] board) {
-        for (int i = 0; i < 3; i++) {
-            if ((board[i][0].equals(player) && board[i][1].equals(player) && board[i][2].equals(player)) ||
-                    (board[0][i].equals(player) && board[1][i].equals(player) && board[2][i].equals(player))) {
-                return true;
-            }
-        }
-        return (board[0][0].equals(player) && board[1][1].equals(player) && board[2][2].equals(player)) ||
-                (board[0][2].equals(player) && board[1][1].equals(player) && board[2][0].equals(player));
-    }
 
     public boolean isBoardFull(String[][] board) {
         for (int i = 0; i < 3; i++) {
